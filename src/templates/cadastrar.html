@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Cadastrar Animal{% endblock %}
+{% block content %}
+<h2>Cadastrar Novo Animal</h2>
+<div class="card">
+    <form method="post">
+        <label for="nome">Nome *</label>
+        <input type="text" name="nome" id="nome" required>
+
+        <label for="especie">Espécie *</label>
+        <input type="text" name="especie" id="especie" placeholder="Cachorro, Gato, etc." required>
+
+        <label for="idade">Idade (anos) *</label>
+        <input type="number" name="idade" id="idade" min="0" required>
+
+        <label for="raca">Raça (opcional)</label>
+        <input type="text" name="raca" id="raca" placeholder="Ex: Labrador, Bulldog... — enriquecido via The Dog API">
+
+        <label for="observacao">Observações</label>
+        <textarea name="observacao" id="observacao" rows="3"></textarea>
+
+        <div style="margin-top: 20px;">
+            <button type="submit">Cadastrar</button>
+            <a href="{{ url_for('index') }}" style="margin-left: 12px;">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

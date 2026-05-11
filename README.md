@@ -1,6 +1,6 @@
 # Registro de Animais para Adoção
 
-> 🌐 **Aplicação publicada:** _adicionar link do Render após o deploy (ver seção [Deploy](#deploy))_
+> 🌐 **Aplicação publicada:** https://adocao-animais.onrender.com
 
 Um sistema em Python para o cadastro e controle de adoção de animais, com **interface web (Flask)** e **interface CLI**. O projeto demonstra boas práticas de desenvolvimento: testes automatizados, integração com API pública, persistência em JSON, pipeline de CI no GitHub Actions e deploy em nuvem.
 

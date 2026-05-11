@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Animais - Adoção{% endblock %}
+{% block content %}
+<h2>Animais Cadastrados</h2>
+
+{% if not animais %}
+    <div class="card">
+        <p>Nenhum animal cadastrado ainda.</p>
+        <a href="{{ url_for('cadastrar') }}" class="btn">Cadastrar o primeiro</a>
+    </div>
+{% else %}
+    {% for animal in animais %}
+        <div class="card animal {% if animal.adotado %}adotado{% endif %}">
+            <h3>
+                {{ animal.nome }}
+                {% if animal.adotado %}
+                    <span class="badge adotado">Adotado</span>
+                {% else %}
+                    <span class="badge">Disponível</span>
+                {% endif %}
+            </h3>
+            <p>
+                <strong>Espécie:</strong> {{ animal.especie }} |
+                <strong>Idade:</strong> {{ animal.idade }} anos
+                {% if animal.raca %} | <strong>Raça:</strong> {{ animal.raca }}{% endif %}
+            </p>
+            {% if animal.observacao %}
+                <p><em>{{ animal.observacao }}</em></p>
+            {% endif %}
+            {% if animal.info_raca %}
+                <div class="info-raca">
+                    <strong>The Dog API:</strong><br>
+                    Temperamento: {{ animal.info_raca.temperamento }}<br>
+                    Expectativa de vida: {{ animal.info_raca.expectativa_vida }}<br>
+                    Peso: {{ animal.info_raca.peso }} kg<br>
+                    Origem: {{ animal.info_raca.origem }}
+                </div>
+            {% endif %}
+            {% if not animal.adotado %}
+                <form action="{{ url_for('adotar', id_animal=animal.id) }}" method="post" style="margin-top: 12px;">
+                    <button type="submit" class="btn-success">Registrar Adoção</button>
+                </form>
+            {% endif %}
+        </div>
+    {% endfor %}
+{% endif %}
+{% endblock %}

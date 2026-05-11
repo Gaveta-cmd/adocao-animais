@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Consultar Raça{% endblock %}
+{% block content %}
+<h2>Consultar Informações de Raça</h2>
+<p>Dados fornecidos pela <a href="https://thedogapi.com" target="_blank">The Dog API</a>.</p>
+
+<div class="card">
+    <form method="get">
+        <label for="nome">Nome da raça</label>
+        <input type="text" name="nome" id="nome" value="{{ nome }}" placeholder="Ex: Labrador, Poodle, Bulldog" required>
+        <div style="margin-top: 16px;">
+            <button type="submit">Buscar</button>
+        </div>
+    </form>
+</div>
+
+{% if erro %}
+    <div class="flash error">{{ erro }}</div>
+{% endif %}
+
+{% if info %}
+    <div class="card">
+        <h3>{{ info.nome }}</h3>
+        <p><strong>Temperamento:</strong> {{ info.temperamento }}</p>
+        <p><strong>Expectativa de vida:</strong> {{ info.expectativa_vida }}</p>
+        <p><strong>Peso:</strong> {{ info.peso }} kg</p>
+        <p><strong>Origem:</strong> {{ info.origem }}</p>
+    </div>
+{% endif %}
+{% endblock %}

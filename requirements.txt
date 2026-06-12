@@ -3,5 +3,8 @@ pytest-cov==4.1.0
 fpdf==1.7.2
 requests==2.32.3
 flask==3.0.3
+flask-sqlalchemy==3.1.1
 gunicorn==21.2.0
 responses==0.25.3
+sqlalchemy==2.0.30
+python-dotenv==1.0.1

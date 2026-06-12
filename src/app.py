@@ -7,7 +7,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 import os
 from dotenv import load_dotenv
 from src.models import SessionLocal, Animal
-from src.api_client import buscar_raca_api
+from src.api_client import buscar_raca
 
 load_dotenv()
 app = Flask(__name__)
@@ -36,7 +36,7 @@ def cadastrar():
             observacoes = request.form.get("observacoes")
             dados_api = {}
             if especie.lower() == "cachorro" and raca:
-                dados_api = buscar_raca_api(raca)
+                dados_api = buscar_raca(raca)
             novo_animal = Animal(
                 nome=nome,
                 especie=especie,
@@ -44,7 +44,7 @@ def cadastrar():
                 raca=raca,
                 observacoes=observacoes,
                 temperamento=dados_api.get("temperamento"),
-                life_span=dados_api.get("life_span"),
+                life_span=dados_api.get("expectativa_vida"),
                 peso=dados_api.get("peso"),
                 origem=dados_api.get("origem"),
                 status="Disponível"
@@ -75,7 +75,7 @@ def adotar(animal_id):
 def consultar_raca():
     nome_raca = request.args.get("nome")
     if nome_raca:
-        dados = buscar_raca_api(nome_raca)
+        dados = buscar_raca(nome_raca)
         return jsonify(dados)
     return jsonify({"erro": "Nome da raça não fornecido"}), 400
 

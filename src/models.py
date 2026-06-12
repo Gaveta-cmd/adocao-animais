@@ -16,6 +16,7 @@ engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+
 class Animal(Base):
     __tablename__ = "animais"
     
@@ -32,7 +33,6 @@ class Animal(Base):
     origem = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()

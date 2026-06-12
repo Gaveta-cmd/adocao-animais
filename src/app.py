@@ -7,7 +7,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 import os
 from dotenv import load_dotenv
 from src.models import SessionLocal, Animal
-from src.api_client import buscar_raca
+from src.api_client import buscar_raca, DogApiError
 
 load_dotenv()
 app = Flask(__name__)
@@ -16,7 +16,7 @@ def get_db():
     return SessionLocal()
 
 @app.route("/", methods=["GET"])
-def listar_animais():
+def index():
     db = get_db()
     try:
         animais = db.query(Animal).all()
@@ -36,7 +36,10 @@ def cadastrar():
             observacoes = request.form.get("observacoes")
             dados_api = {}
             if especie.lower() == "cachorro" and raca:
-                dados_api = buscar_raca(raca)
+                try:
+                    dados_api = buscar_raca(raca) or {}
+                except DogApiError:
+                    dados_api = {}
             novo_animal = Animal(
                 nome=nome,
                 especie=especie,
@@ -51,7 +54,7 @@ def cadastrar():
             )
             db.add(novo_animal)
             db.commit()
-            return redirect(url_for("listar_animais"))
+            return redirect(url_for("index"))
         except Exception as e:
             db.rollback()
             return render_template("cadastrar.html", erro=str(e))
@@ -67,7 +70,7 @@ def adotar(animal_id):
         if animal:
             animal.status = "Adotado"
             db.commit()
-        return redirect(url_for("listar_animais"))
+        return redirect(url_for("index"))
     finally:
         db.close()
 

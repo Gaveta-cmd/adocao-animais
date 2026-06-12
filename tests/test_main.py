@@ -58,6 +58,7 @@ def test_adotar_animal(client, db):
     animal_id = novo.id
     response = client.post(f"/adotar/{animal_id}")
     assert response.status_code == 302
+    db.expire_all()
     animal_atualizado = db.query(Animal).filter(Animal.id == animal_id).first()
     assert animal_atualizado.status == "Adotado"
 

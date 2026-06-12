@@ -3,77 +3,85 @@
 Expoe as mesmas operacoes do CLI via HTTP e renderiza paginas HTML simples.
 Usada para o deploy publico (Render/Railway).
 """
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, jsonify
+import os
+from dotenv import load_dotenv
+from src.models import SessionLocal, Animal
+from src.api_client import buscar_raca_api
 
-from src.main import (
-    cadastrar_animal,
-    listar_animais,
-    marcar_adotado,
-    carregar_dados,
-)
-from src.api_client import buscar_raca, DogApiError
+load_dotenv()
+app = Flask(__name__)
 
+def get_db():
+    return SessionLocal()
 
-def create_app():
-    app = Flask(__name__)
-    app.secret_key = "adocao-animais-secret"
-
-    @app.route("/")
-    def index():
-        animais = carregar_dados()
+@app.route("/", methods=["GET"])
+def listar_animais():
+    db = get_db()
+    try:
+        animais = db.query(Animal).all()
         return render_template("index.html", animais=animais)
+    finally:
+        db.close()
 
-    @app.route("/cadastrar", methods=["GET", "POST"])
-    def cadastrar():
-        if request.method == "POST":
-            nome = request.form.get("nome", "").strip()
-            especie = request.form.get("especie", "").strip()
-            try:
-                idade = int(request.form.get("idade", "0"))
-            except ValueError:
-                flash("Idade inválida.", "error")
-                return redirect(url_for("cadastrar"))
-            obs = request.form.get("observacao", "").strip()
-            raca = request.form.get("raca", "").strip() or None
-            if not nome or not especie:
-                flash("Nome e espécie são obrigatórios.", "error")
-                return redirect(url_for("cadastrar"))
-            cadastrar_animal(nome, especie, idade, obs, raca)
-            flash(f"Animal '{nome}' cadastrado!", "success")
-            return redirect(url_for("index"))
-        return render_template("cadastrar.html")
+@app.route("/cadastrar", methods=["GET", "POST"])
+def cadastrar():
+    if request.method == "POST":
+        db = get_db()
+        try:
+            nome = request.form.get("nome")
+            especie = request.form.get("especie")
+            idade = int(request.form.get("idade", 0)) if request.form.get("idade") else None
+            raca = request.form.get("raca")
+            observacoes = request.form.get("observacoes")
+            dados_api = {}
+            if especie.lower() == "cachorro" and raca:
+                dados_api = buscar_raca_api(raca)
+            novo_animal = Animal(
+                nome=nome,
+                especie=especie,
+                idade=idade,
+                raca=raca,
+                observacoes=observacoes,
+                temperamento=dados_api.get("temperamento"),
+                life_span=dados_api.get("life_span"),
+                peso=dados_api.get("peso"),
+                origem=dados_api.get("origem"),
+                status="Disponível"
+            )
+            db.add(novo_animal)
+            db.commit()
+            return redirect(url_for("listar_animais"))
+        except Exception as e:
+            db.rollback()
+            return render_template("cadastrar.html", erro=str(e))
+        finally:
+            db.close()
+    return render_template("cadastrar.html")
 
-    @app.route("/adotar/<int:id_animal>", methods=["POST"])
-    def adotar(id_animal):
-        if marcar_adotado(id_animal):
-            flash("Adoção registrada!", "success")
-        else:
-            flash("Animal não encontrado.", "error")
-        return redirect(url_for("index"))
+@app.route("/adotar/<int:animal_id>", methods=["POST"])
+def adotar(animal_id):
+    db = get_db()
+    try:
+        animal = db.query(Animal).filter(Animal.id == animal_id).first()
+        if animal:
+            animal.status = "Adotado"
+            db.commit()
+        return redirect(url_for("listar_animais"))
+    finally:
+        db.close()
 
-    @app.route("/raca", methods=["GET"])
-    def consultar_raca():
-        nome = request.args.get("nome", "").strip()
-        info = None
-        erro = None
-        if nome:
-            try:
-                info = buscar_raca(nome)
-                if not info:
-                    erro = f"Raça '{nome}' não encontrada."
-            except DogApiError as exc:
-                erro = str(exc)
-        return render_template("raca.html", nome=nome, info=info, erro=erro)
+@app.route("/raca", methods=["GET"])
+def consultar_raca():
+    nome_raca = request.args.get("nome")
+    if nome_raca:
+        dados = buscar_raca_api(nome_raca)
+        return jsonify(dados)
+    return jsonify({"erro": "Nome da raça não fornecido"}), 400
 
-    @app.route("/health")
-    def health():
-        return {"status": "ok"}
-
-    return app
-
-
-app = create_app()
-
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok"}), 200
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5000)

@@ -23,5 +23,7 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
+      env:
+        DATABASE_URL: sqlite:///test.db
       run: |
-        pytest tests/
+        pytest tests/ -v --cov=src --cov-report=term-missing

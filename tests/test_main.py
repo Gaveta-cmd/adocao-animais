@@ -1,46 +1,69 @@
-import os
-import json
 import pytest
-from src.main import cadastrar_animal, listar_animais, marcar_adotado, ARQUIVO_DADOS
+from src.models import SessionLocal, Animal, engine, Base
+from src.app import app
 
-def setup_function():
-    # Limpar arquivo de dados antes de cada teste
-    if os.path.exists(ARQUIVO_DADOS):
-        os.remove(ARQUIVO_DADOS)
 
-def teardown_function():
-    # Limpar arquivo de dados após cada teste
-    if os.path.exists(ARQUIVO_DADOS):
-        os.remove(ARQUIVO_DADOS)
+@pytest.fixture
+def client():
+    Base.metadata.create_all(bind=engine)
+    with app.test_client() as client:
+        yield client
+    Base.metadata.drop_all(bind=engine)
 
-def test_cadastrar_animal():
-    animal = cadastrar_animal("Rex", "Cachorro", 3, "Muito dócil")
-    assert animal["nome"] == "Rex"
-    assert animal["especie"] == "Cachorro"
-    assert animal["adotado"] == False
-    
-    # Verificar no arquivo
-    with open(ARQUIVO_DADOS, 'r', encoding='utf-8') as f:
-        dados = json.load(f)
-    assert len(dados) == 1
-    assert dados[0]["nome"] == "Rex"
 
-def test_listar_animais():
-    cadastrar_animal("Mimi", "Gato", 2, "Brincalhona")
-    cadastrar_animal("Thor", "Cachorro", 5, "Guarda")
-    dados = listar_animais()
-    assert len(dados) == 2
+@pytest.fixture
+def db():
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    yield db
+    db.close()
+    Base.metadata.drop_all(bind=engine)
 
-def test_marcar_adotado():
-    cadastrar_animal("Bolinha", "Gato", 1, "Pequeno")
-    # No inicio é não-adotado
-    dados = listar_animais()
-    assert dados[0]["adotado"] == False
-    
-    # Marcar como adotado
-    sucesso = marcar_adotado(dados[0]["id"])
-    assert sucesso == True
-    
-    # Verificar novamente
-    dados_atualizados = listar_animais()
-    assert dados_atualizados[0]["adotado"] == True
+
+def test_cadastrar_animal(client, db):
+    response = client.post("/cadastrar", data={
+        "nome": "Rex",
+        "especie": "Cachorro",
+        "idade": "5",
+        "raca": "Labrador",
+        "observacoes": "Animal dócil"
+    })
+    assert response.status_code == 302
+    animal = db.query(Animal).filter(Animal.nome == "Rex").first()
+    assert animal is not None
+    assert animal.especie == "Cachorro"
+
+
+def test_listar_animais(client, db):
+    novo = Animal(
+        nome="Fluffy",
+        especie="Gato",
+        status="Disponível"
+    )
+    db.add(novo)
+    db.commit()
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"Fluffy" in response.data
+
+
+def test_adotar_animal(client, db):
+    novo = Animal(
+        nome="Bilu",
+        especie="Cachorro",
+        status="Disponível"
+    )
+    db.add(novo)
+    db.commit()
+    animal_id = novo.id
+    response = client.post(f"/adotar/{animal_id}")
+    assert response.status_code == 302
+    db.expire_all()
+    animal_atualizado = db.query(Animal).filter(Animal.id == animal_id).first()
+    assert animal_atualizado.status == "Adotado"
+
+
+def test_health_check(client):
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json == {"status": "ok"}

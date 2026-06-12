@@ -2,13 +2,15 @@
 
 > 🌐 **Aplicação publicada:** https://adocao-animais.onrender.com
 
-Um sistema em Python para o cadastro e controle de adoção de animais, com **interface web (Flask)** e **interface CLI**. O projeto demonstra boas práticas de desenvolvimento: testes automatizados, integração com API pública, persistência em JSON, pipeline de CI no GitHub Actions e deploy em nuvem.
+Um sistema em Python para o cadastro e controle de adoção de animais, com **interface web (Flask)** e **interface CLI**. O projeto demonstra boas práticas de desenvolvimento: testes automatizados, integração com API pública, persistência em banco de dados relacional (PostgreSQL/Supabase), pipeline de CI no GitHub Actions e deploy em nuvem.
 
-## O que tem de novo nesta entrega (Etapa Intermediária)
+## O que tem de novo nesta entrega (Etapa Final)
 
+- 🗄️ **Persistência em banco de dados**: SQLAlchemy + PostgreSQL (Supabase) substituindo o arquivo JSON.
+- 🧩 **Modelos ORM** (`src/models.py`): modelo `Animal` mapeado via SQLAlchemy com todos os campos do sistema.
 - 🔌 **Integração com API pública**: [The Dog API](https://thedogapi.com) — ao cadastrar um cachorro com raça, o sistema busca automaticamente temperamento, expectativa de vida, peso e origem.
 - 🌐 **Interface Web** com Flask, publicada online via Render.
-- 🧪 **Testes de integração** validando o consumo da API externa (mockados com `responses`).
+- 🧪 **Testes de integração Flask** (`tests/test_main.py`) cobrindo os endpoints da aplicação com banco de dados real (criado e destruído por fixture).
 - 🚀 **Deploy contínuo** via Render usando `render.yaml`.
 
 ## Como Executar Localmente
@@ -16,6 +18,13 @@ Um sistema em Python para o cadastro e controle de adoção de animais, com **in
 ### Pré-requisitos
 ```bash
 pip install -r requirements.txt
+```
+
+Configure a variável de ambiente `DATABASE_URL` com a string de conexão do seu banco PostgreSQL (ex: Supabase):
+
+```bash
+# .env
+DATABASE_URL=postgresql://usuario:senha@host:porta/banco
 ```
 
 ### Modo CLI (terminal)
@@ -35,8 +44,8 @@ Acesse http://localhost:5000
 2. **Enriquecimento via API**: se a espécie for "Cachorro" e a raça for informada, o sistema consulta a **The Dog API** e armazena dados extras (temperamento, life span, peso, origem).
 3. **Listagem**: mostra todos os animais e seu status (Disponível/Adotado) — exibe também os dados enriquecidos quando houver.
 4. **Adoção**: marca um animal como adotado pelo ID.
-5. **Consulta de Raça**: nova tela/opção que permite consultar diretamente a The Dog API.
-6. **Persistência**: tudo é gravado em `animais.json` automaticamente.
+5. **Consulta de Raça**: endpoint `/raca?nome=...` que consulta diretamente a The Dog API e retorna JSON.
+6. **Persistência**: todos os dados são salvos em banco de dados PostgreSQL via SQLAlchemy (Supabase em produção).
 
 ## Como Testar
 
@@ -45,8 +54,8 @@ pytest tests/ -v
 ```
 
 Os testes cobrem:
-- `tests/test_main.py` — testes unitários do CRUD.
-- `tests/test_integration_api.py` — **testes de integração** validando a comunicação com a The Dog API (com mock via `responses`), incluindo: resposta de sucesso, raça inexistente, falha de rede, fluxo end-to-end de cadastro enriquecido.
+- `tests/test_main.py` — **testes de integração Flask**: verifica os endpoints `/cadastrar`, `/`, `/adotar/<id>` e `/health` com banco de dados real (criado e destruído por fixture `pytest`).
+- `tests/test_integration_api.py` — **testes de integração da API externa**: valida a comunicação com a The Dog API (mockada com `responses`), incluindo: resposta de sucesso, raça inexistente, falha de rede, fluxo end-to-end de cadastro enriquecido.
 
 ## Estrutura do Projeto
 
@@ -54,13 +63,15 @@ Os testes cobrem:
 adocao-animais/
 ├── src/
 │   ├── main.py             # CLI + lógica de negócio
+│   ├── models.py           # Modelos SQLAlchemy (Animal) + configuração do banco
 │   ├── api_client.py       # Cliente da The Dog API
 │   ├── app.py              # Interface web Flask
 │   └── templates/          # HTML (Jinja2)
 ├── tests/
-│   ├── test_main.py            # Testes unitários
-│   └── test_integration_api.py # Testes de integração
+│   ├── test_main.py            # Testes de integração Flask (endpoints + DB)
+│   └── test_integration_api.py # Testes de integração com a The Dog API
 ├── .github/workflows/          # CI (GitHub Actions)
+├── .env                    # DATABASE_URL e outras variáveis (não versionado)
 ├── requirements.txt
 ├── Procfile                # Para deploy (gunicorn)
 ├── render.yaml             # Configuração do Render

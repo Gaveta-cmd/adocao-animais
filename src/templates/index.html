@@ -37,7 +37,7 @@
                 </div>
             {% endif %}
             {% if not animal.adotado %}
-                <form action="{{ url_for('adotar', id_animal=animal.id) }}" method="post" style="margin-top: 12px;">
+                <form action="{{ url_for('adotar', animal_id=animal.id) }}" method="post" style="margin-top: 12px;">
                     <button type="submit" class="btn-success">Registrar Adoção</button>
                 </form>
             {% endif %}

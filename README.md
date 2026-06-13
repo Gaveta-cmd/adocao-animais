@@ -120,5 +120,8 @@ Exemplo de resposta:
 
 ---
 
-**Autor**: Davi Augusto de Barros Resende Santana da Silva
-**RA**: 22505381
+## Integrantes
+
+- **Davi Augusto** | RA: 22505381
+- **Pedro Vitor** | RA: 22509172
+- **Adrian Silva** | RA: 22507428
